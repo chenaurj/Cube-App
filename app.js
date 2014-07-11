@@ -6,17 +6,28 @@ var express = require('express'),
 	BackBone = require('backbone'),
 	HandleBars = require('express3-handlebars'),
 	mysql = require('mysql');
-/*	MySQLStore = require('connect-mysql')(express),
- 	database = require('./database');*/
 
 
- var connection = mysql.createConnection({
+var connection = mysql.createConnection({
  	host : 'localhost',
  	user : 'root',
  	password : 'anger'
  });
 
- connection.connect();
+connection.connect();
+connection.query('USE cubemanager');
+
+var cleanInput = function(string){
+	var ans = string;
+	ans = ans.replace(/;/, '');
+	ans = ans.replace(/!/, '');
+	ans = ans.replace(/,/, '');
+	ans = ans.replace(/=/, '');
+	ans = ans.replace(/</, '');
+	ans = ans.replace(/>/, '');
+	ans = ans.replace(/\./, '');	
+	return ans;
+};
 
 
 var App = function() {
@@ -32,6 +43,8 @@ var App = function() {
 
 	app.set('view engine', '.hbs');
 
+
+
 	app.get('/', function(req, res){
 		console.log('At home page');
 		res.render('home.hbs');
@@ -42,18 +55,57 @@ var App = function() {
 		res.render('thanks.hbs');
 	});
 
-	app.get('/test', function(req, res){
-		console.log('At test');
-		connection.query('use cube');
-		connection.query('SELECT name, num FROM test', function(err, rows, fields){
-			if(err) throw err;
-			console.log('The solution is: ' + rows[0].num);
+
+	app.get('/cubes', function(req, res){
+		console.log('At cubes');
+		connection.query('SELECT * FROM cube', function(err, rows, fields){
+			if(err){
+				throw err;
+			}
+			res.contentType('application/json');
+			res.write(JSON.stringify(rows));
+			res.end();
 		});
 	});
 
-	app.get('/hello.txt', function(req,res){
-		res.send('Hello World');
+	app.get('/cube/:id', function(req, res){
+		var clean = cleanInput(req.params.id);
+		console.log('At cube/' + clean);
+		connection.query('SELECT * FROM cube WHERE id = ' + clean, function(err, rows, fields){
+			if(err){
+				throw err;
+			}
+			res.contentType('application/json');
+			res.write(JSON.stringify(rows));
+			res.end();
+		});
 	});
+
+	app.get('/cards', function(req, res){
+		console.log('At cards');
+		connection.query('SELECT * FROM card', function(err, rows, fields){
+			if(err){
+				throw err;
+			}
+			res.contentType('application/json');
+			res.write(JSON.stringify(rows));
+			res.end();
+		});
+	});
+
+	app.get('/card/:id', function(req, res){
+		var clean = cleanInput(req.params.id);
+		console.log('At card/' + clean);
+		connection.query('SELECT * FROM card WHERE id = ' + clean, function(err, rows, fields){
+			if(err){
+				throw err;
+			}
+			res.contentType('application/json');
+			res.write(JSON.stringify(rows));
+			res.end();
+		});
+	});
+
 
 	app.listen(port);
 	console.log('Listening on port %d', port);
